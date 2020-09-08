@@ -66,6 +66,10 @@ while(toc(t) < 1)
     pause(0.1);
 end
 
+global ksp;
+ksp = ksptot_connect('localhost',8282,'Client');
+
+
 %Set up the GUI for use
 mainGUIHandle = mainGUI(celBodyData, bodyNames, hS, appOptions);
 if(isgraphics(hS))

@@ -73,23 +73,15 @@ function rts_VesselSelectGUI_OpeningFcn(hObject, eventdata, handles, varargin)
 end
 
 function testConnection(handles)
-    port = 8282;
-    role = 'Client';
-    rHost = get(handles.remoteHostText,'String');
+    global ksp;
+    ksp.setHost(get(handles.remoteHostText,'String'));
     set(handles.couldNotConnectLabel,'Visible', 'off');
     drawnow;
     
+ 
     try
-        resolveip(rHost);
-    catch ME
-        warndlg(['Could not resolve remote host: ', getReport(ME,'extended','hyperlinks','off')]);
-        return;
-    end
-    
-    try
-        tcpipClient = createTcpIpClient(port, role, rHost);
-        writeDataToKSPTOTConnect('ConnectionCheck', [1 2 3 4 5], 'd', tcpipClient);
-        set(handles.couldNotConnectLabel,'Visible', 'off');
+       ksp.checkConnection;
+       set(handles.couldNotConnectLabel,'Visible', 'off');
     catch ME
 %         warndlg(['Connection check failed: ', getReport(ME,'extended','hyperlinks','off')]);
         set(handles.couldNotConnectLabel,'Visible', 'on');
@@ -98,31 +90,23 @@ function testConnection(handles)
     end
     
     populateVesselSelectCombo(handles);
-    setappdata(handles.rts_VesselSelectGUI, 'RHost', rHost);
+    setappdata(handles.rts_VesselSelectGUI, 'RHost', ksp.host);
     
     mainGUIFig = getappdata(handles.rts_VesselSelectGUI,'mainGUIFig');
-    updateAppOptions(mainGUIFig, 'ksptot', 'rtshostname', rHost);
+    updateAppOptions(mainGUIFig, 'ksptot', 'rtshostname', ksp.host);
 end
 
 function populateVesselSelectCombo(handles)
-    port = 8282;
-    role = 'Client';
-    rHost = get(handles.remoteHostText,'String');
-    tcpipClient = createTcpIpClient(port, role, rHost);
+   global ksp;
     
     try
-        guids = readManyStringsFromKSPTOTConnect('GetVesselIDList', '', 32, true, tcpipClient);
-        if(isempty(guids))
-            error('Error reading vessels from KSP.');
-        end
+        guids = ksp.getVesselIDList;
         vesselNames = {};
         storageGUIDS = {};
         for(i=1:length(guids))
             guid = guids{i};
-            fclose(tcpipClient);
-            delete(tcpipClient);
-            tcpipClient = createTcpIpClient(port, role, rHost);
-            vesselNames{i} = [readStringFromKSPTOTConnect('GetVesselNameByGUID', guid, true, tcpipClient), ' - ', guid(1:4)];
+         
+            vesselNames{i} = [ksp.getVesselNameByGUID(guid), ' - ', guid(1:4)];
             storageGUIDS{i} = guid;
         end
 
